@@ -1,0 +1,1992 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAYLIST</title>
+<style>
+@font-face {
+    font-family: 'SMGyeonChul';
+    src: url('SM3견출고딕-Regular.otf') format('opentype');
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-drag: none; -webkit-user-select: none; }
+  body { width: 100vw; height: 100vh; overflow: hidden; font-family: Arial, sans-serif; background: #000; }
+
+  /* ── 랜딩 페이지 ── */
+  #landing {
+    position: fixed; top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #fff;
+    z-index: 9999;
+    overflow: hidden;
+    transition: opacity 0.4s ease;
+  }
+  #landing.fadeout { opacity: 0; pointer-events: none; }
+
+  #landingHint {
+    position: absolute;
+    bottom: 6%;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,0.75);
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    font-family: Arial, sans-serif;
+    cursor: pointer;
+    z-index: 10;
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 10px 28px;
+    transition: all 0.2s;
+  }
+  #landingHint:hover { background: rgba(255,255,255,0.1); }
+
+  .iphone-mockup {
+    position: relative;
+    height: 90vh;
+    width: auto;
+    aspect-ratio: 5376 / 3584;
+  }
+  .iphone-mockup .iphone-frame-img {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .iphone-screen {
+    position: absolute;
+    top: 6.14%;
+    left: 35.51%;
+    width: 28.83%;
+    height: 87.72%;
+    overflow: hidden;
+    background: #000;
+    z-index: 1;
+    border-radius: 12px;
+  }
+  .iphone-screen video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+
+  /* ── 손 화면 ── */
+  #handScreen {
+    position: fixed; top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #fff;
+    z-index: 8888;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+  }
+  #handScreen.visible {
+    opacity: 1;
+    pointer-events: all;
+  }
+  #handImg {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+  }
+
+  .nail-zone {
+    position: absolute;
+    width: 60px; height: 60px;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    border-radius: 50%;
+  }
+  .nail-zone::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 70px; height: 70px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,240,200,0.7) 0%, rgba(255,220,120,0.3) 50%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .nail-zone:hover::after { opacity: 1; }
+  .nail-zone:hover { animation: nailPulse 1s ease infinite; }
+
+  @keyframes nailPulse {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(255,230,150,0.6)); }
+    50%       { filter: drop-shadow(0 0 14px rgba(255,220,80,0.9)); }
+  }
+
+  /* ── 줌인 오버레이 ── */
+  #zoomOverlay {
+    position: fixed; top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #fff;
+    z-index: 9000;
+    opacity: 0;
+    pointer-events: none;
+    overflow: hidden;
+    transition: opacity 0.25s ease;
+  }
+  #zoomOverlay.active { pointer-events: all; }
+  #zoomCanvas {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+
+  /* ── 메인 앱 ── */
+  #app {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    opacity: 0; transition: opacity 0.4s ease; pointer-events: none;
+  }
+  #app.visible { opacity: 1; pointer-events: all; }
+
+  #panel-left {
+    position: absolute; top: 0; left: 0; width: 50%; height: 100%;
+    background: #000; cursor: ew-resize;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  #panel-right {
+    position: absolute; top: 0; right: 0; width: 50%; height: 100%;
+    background: #c8c8c8;
+    cursor: default;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* 왼쪽 패널 공통 텍스트 스타일 */
+  #panel-left * {
+    font-family: Arial, Helvetica, sans-serif;
+    letter-spacing: -0.08em;
+  }
+
+  #panel-left p {
+    color: #F0F0F0 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 1.6vh !important;
+    letter-spacing: -0.04em !important;
+    font-weight: 400 !important;
+    opacity: 0.9 !important;
+    text-shadow:
+      0 2px 8px rgba(0,0,0,0.5),
+      0 1px 2px rgba(0,0,0,0.4),
+      0 0 20px rgba(255,255,255,0.05) !important;
+  }
+
+  #sliderTrack { position: relative; }
+  #sliderFill  { background: #d0d0d0 !important; }
+  #sliderThumb {
+    background: #E8E8E8 !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.3) !important;
+  }
+
+  #nailWarning {
+    font-family: Arial, Helvetica, sans-serif !important;
+    letter-spacing: -0.04em !important;
+    font-size: 1.6vh !important;
+    text-shadow: 0 2px 10px rgba(255,0,0,0.4), 0 1px 3px rgba(0,0,0,0.3) !important;
+  }
+
+  #clipperImg {
+    position: absolute; width: 35%; height: auto; left: 50%; top: -60%;
+    transform: translateX(-50%); z-index: 20; pointer-events: none;
+    transition: top 0.5s cubic-bezier(0.77,0,0.175,1); visibility: hidden;
+  }
+  #clipperImg.visible { visibility: visible; top: -5%; }
+
+  #biteImg {
+    position: fixed; width: 40vw; height: auto; left: 50%; bottom: -100vh;
+    transform: translateX(-50%); z-index: 999; pointer-events: none;
+    transition: bottom 0.6s cubic-bezier(0.33,1,0.68,1); visibility: hidden;
+  }
+  #biteImg.visible { visibility: visible; bottom: -5vh; }
+
+  @keyframes chew {
+    0%{transform:translateY(0);} 10%{transform:translateY(-12px);}
+    20%{transform:translateY(6px);} 30%{transform:translateY(-10px);}
+    40%{transform:translateY(5px);} 50%{transform:translateY(-8px);}
+    60%{transform:translateY(4px);} 70%{transform:translateY(-5px);}
+    80%{transform:translateY(3px);} 90%{transform:translateY(-2px);}
+    100%{transform:translateY(0);}
+  }
+  @keyframes shakeX {
+    0%{transform:translateX(0);} 15%{transform:translateX(-10px);}
+    30%{transform:translateX(10px);} 45%{transform:translateX(-8px);}
+    60%{transform:translateX(8px);} 75%{transform:translateX(-5px);}
+    90%{transform:translateX(5px);} 100%{transform:translateX(0);}
+  }
+  @keyframes warningPulse { from{opacity:1;} to{opacity:0.4;} }
+  body.chew  { animation: chew   0.6s ease; }
+  body.shake { animation: shakeX 0.5s ease; }
+
+  /* 하단 버튼 바 — 위치 올리고 iOS 스타일 */
+  #leftBottomBar {
+    position: absolute; bottom: 10%; left: 0; width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    z-index: 10; pointer-events: none;
+  }
+  .left-btn {
+    display: flex; align-items: center; justify-content: center;
+    padding: 7px 18px;
+    min-width: 62px;
+    border-radius: 8px;
+    cursor: pointer; pointer-events: all;
+    transition: all 0.08s;
+    background: linear-gradient(180deg,
+      #6e92c8 0%, #4a6fa8 48%,
+      #3a5a92 49%, #2e4a7e 100%
+    );
+    border: 1px solid #1e3060;
+    border-top-color: #8aaade;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.35) inset,
+      0 2px 0 rgba(255,255,255,0.12) inset,
+      0 -1px 0 rgba(0,0,0,0.3) inset,
+      0 3px 8px rgba(0,0,0,0.55),
+      0 1px 2px rgba(0,0,0,0.4);
+  }
+  .left-btn:active {
+    background: linear-gradient(180deg,
+      #2e4a7e 0%, #3a5a92 48%,
+      #4a6fa8 49%, #5a80b8 100%
+    );
+    box-shadow:
+      0 1px 0 rgba(0,0,0,0.2) inset,
+      0 2px 6px rgba(0,0,0,0.4);
+    transform: scale(0.96);
+  }
+  .btn-label {
+    font-family: -apple-system, 'Helvetica Neue', Helvetica, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #fff;
+    text-shadow: 0 -1px 0 rgba(0,0,0,0.45), 0 1px 1px rgba(255,255,255,0.1);
+  }
+
+  /* ════════════════════════════════
+     아이팟 스타일 — nail 이미지와 동일 높이(65vh)
+     아이팟 실물 비율 ≈ 너비:높이 = 1 : 1.72
+     → 너비 = 65vh / 1.72 ≈ 44.2vh
+  ════════════════════════════════ */
+  .ipod-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+  }
+
+  .ipod-body {
+    /* nail 이미지와 완전히 같은 높이 */
+    height: 65vh;
+    width: calc(65vh / 1.72);
+    background: linear-gradient(175deg, #e4e4e4 0%, #d0d0d0 40%, #c4c4c4 100%);
+    border-radius: calc(65vh * 0.038);
+    padding: calc(65vh * 0.016) calc(65vh * 0.016) calc(65vh * 0.032);
+    box-shadow:
+      0 2px 0 rgba(255,255,255,0.75) inset,
+      0 -2px 0 rgba(0,0,0,0.12) inset,
+      1px 0 0 rgba(255,255,255,0.5) inset,
+      -1px 0 0 rgba(0,0,0,0.08) inset,
+      4px 8px 24px rgba(0,0,0,0.4),
+      -2px 2px 8px rgba(0,0,0,0.15),
+      0 2px 2px rgba(255,255,255,0.3);
+    position: relative;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 스크린 베젤 */
+  .ipod-screen-bezel {
+    background: #1c1c1c;
+    border-radius: calc(65vh * 0.01);
+    padding: calc(65vh * 0.004);
+    box-shadow:
+      0 2px 8px rgba(0,0,0,0.7) inset,
+      0 1px 0 rgba(80,80,80,0.5);
+    margin-bottom: calc(65vh * 0.022);
+    flex-shrink: 0;
+  }
+
+  .ipod-screen {
+    background: #fff;
+    border-radius: calc(65vh * 0.006);
+    overflow: hidden;
+    /* 전체 높이의 약 45% */
+    height: calc(65vh * 0.45);
+    position: relative;
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+  }
+
+  /* 상단 타이틀바 (구형 — 숨김) */
+  .ipod-titlebar { display: none; }
+  .ipod-title-text { display: none; }
+  /* 배터리 아이콘 */
+  .ipod-battery {
+    display: flex;
+    align-items: center;
+  }
+  .ipod-battery-shell {
+    width: calc(65vh * 0.028);
+    height: calc(65vh * 0.014);
+    border: 1.5px solid rgba(255,255,255,0.9);
+    border-radius: 1.5px;
+    position: relative;
+  }
+  .ipod-battery-shell::after {
+    content: '';
+    position: absolute;
+    right: calc(65vh * -0.006);
+    top: 50%;
+    transform: translateY(-50%);
+    width: calc(65vh * 0.004);
+    height: calc(65vh * 0.008);
+    background: rgba(255,255,255,0.9);
+    border-radius: 0 1px 1px 0;
+  }
+  .ipod-battery-fill {
+    position: absolute;
+    left: 1px; top: 1px; bottom: 1px;
+    width: 80%;
+    background: #6ef06e;
+    border-radius: 0.5px;
+  }
+
+  /* ════════════════════════════════
+     아이팟 스크린 — 커버 고정 + 곡 목록
+  ════════════════════════════════ */
+
+  .ipod-screen {
+    background: #fff;
+    border-radius: calc(65vh * 0.006);
+    overflow: hidden;
+    height: calc(65vh * 0.45);
+    position: relative;
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 상단 타이틀바 */
+  .ipod-statusbar {
+    background: linear-gradient(180deg, #5ab4f5 0%, #1e78d4 100%);
+    height: calc(65vh * 0.026);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 calc(65vh * 0.01);
+    flex-shrink: 0;
+  }
+  .ipod-statusbar-title {
+    font-size: calc(65vh * 0.015);
+    font-weight: 700;
+    color: #fff;
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* 배터리 (상태바용) */
+  .ipod-battery { display: flex; align-items: center; flex-shrink: 0; }
+  .ipod-battery-shell {
+    width: calc(65vh * 0.022);
+    height: calc(65vh * 0.011);
+    border: 1px solid rgba(255,255,255,0.8);
+    border-radius: 1.5px;
+    position: relative;
+  }
+  .ipod-battery-shell::after {
+    content: '';
+    position: absolute;
+    right: calc(65vh * -0.004);
+    top: 50%; transform: translateY(-50%);
+    width: calc(65vh * 0.003);
+    height: calc(65vh * 0.006);
+    background: rgba(255,255,255,0.8);
+    border-radius: 0 1px 1px 0;
+  }
+  .ipod-battery-fill {
+    position: absolute;
+    left: 1px; top: 1px; bottom: 1px;
+    width: 78%;
+    background: #7ef07e;
+    border-radius: 0.5px;
+  }
+
+  /* 커버 + 곡정보 가로 레이아웃 */
+  .ipod-cover-row {
+    display: flex;
+    align-items: stretch;
+    flex-shrink: 0;
+    height: calc(65vh * 0.19);
+    border-bottom: 0.5px solid #e0e0e0;
+  }
+
+  /* 플레이리스트 커버 — 정사각형 고정 프레임 */
+  .ipod-pl-cover {
+    width: calc(65vh * 0.19);
+    height: calc(65vh * 0.19);
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #a8edea, #fed6e3);
+    background-size: cover;
+    background-position: center;
+    transition: background-image 0.3s ease;
+  }
+
+  /* 현재 재생 곡 정보 */
+  .ipod-now-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: calc(65vh * 0.014) calc(65vh * 0.012);
+    gap: calc(65vh * 0.006);
+    background: #fafafa;
+  }
+  .ipod-now-title {
+    font-size: calc(65vh * 0.021);
+    font-weight: 700;
+    color: #111;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+  }
+  .ipod-now-artist {
+    font-size: calc(65vh * 0.016);
+    color: #555;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+  }
+  .ipod-now-duration {
+    font-size: calc(65vh * 0.014);
+    color: #aaa;
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+  }
+  .ipod-now-empty {
+    font-size: calc(65vh * 0.015);
+    color: #bbb;
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    text-align: center;
+  }
+
+  /* 곡 목록 (스크롤) */
+  .ipod-tracklist {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+  }
+  .ipod-tracklist::-webkit-scrollbar { display: none; }
+
+  .ipod-track-row {
+    display: flex;
+    align-items: center;
+    height: calc(65vh * 0.058);
+    padding: 0 calc(65vh * 0.01);
+    border-bottom: 0.5px solid #f0f0f0;
+    gap: calc(65vh * 0.008);
+    cursor: pointer;
+    transition: background 0.08s;
+  }
+  .ipod-track-row:hover { background: #f5f5f5; }
+  .ipod-track-row.ipod-active-row {
+    background: linear-gradient(90deg, #e8f4ff 0%, #f0f8ff 100%);
+  }
+
+  /* 곡 번호 */
+  .ipod-track-num {
+    font-size: calc(65vh * 0.014);
+    color: #bbb;
+    width: calc(65vh * 0.022);
+    text-align: right;
+    flex-shrink: 0;
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+  }
+  .ipod-track-row.ipod-active-row .ipod-track-num { color: #1e78d4; }
+
+  /* 앨범 썸네일 */
+  .ipod-track-thumb {
+    width: calc(65vh * 0.044);
+    height: calc(65vh * 0.044);
+    border-radius: calc(65vh * 0.004);
+    flex-shrink: 0;
+  }
+
+  /* 곡 텍스트 */
+  .ipod-track-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: calc(65vh * 0.002);
+  }
+  .ipod-track-title {
+    font-size: calc(65vh * 0.017);
+    font-weight: 600;
+    color: #111;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+  }
+  .ipod-track-artist {
+    font-size: calc(65vh * 0.013);
+    color: #888;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+  }
+  .ipod-track-row.ipod-active-row .ipod-track-title { color: #1e78d4; }
+
+  /* 재생 시간 */
+  .ipod-track-dur {
+    font-size: calc(65vh * 0.013);
+    color: #bbb;
+    flex-shrink: 0;
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+  }
+
+  /* 토스트 */
+  .ipod-toast {
+    position: absolute;
+    bottom: calc(65vh * 0.012);
+    left: 50%;
+    transform: translateX(-50%) translateY(6px);
+    background: rgba(0,0,0,0.75);
+    color: #fff;
+    font-size: calc(65vh * 0.014);
+    padding: calc(65vh * 0.005) calc(65vh * 0.012);
+    border-radius: calc(65vh * 0.01);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    z-index: 20;
+  }
+  .ipod-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* 구형 클래스 정리 */
+  .ipod-list, .ipod-added-badge, .ipod-count,
+  .ipod-scroll-area, .ipod-strip-header, .ipod-album-strip,
+  .ipod-main-area, .ipod-featured-info, .ipod-strip-label { display: none !important; }
+
+  /* ── 휠 영역 ── */
+  .ipod-wheel-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+  }
+
+  .ipod-wheel {
+    /* 전체 높이의 약 44% → 휠 지름 */
+    width: calc(65vh * 0.44);
+    height: calc(65vh * 0.44);
+    border-radius: 50%;
+    position: relative;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 휠 외부 링 */
+  .ipod-wheel-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background:
+      radial-gradient(ellipse at 38% 32%, #e6e6e6 0%, #d0d0d0 35%, #bababa 65%, #a8a8a8 100%);
+    box-shadow:
+      0 2px 0 rgba(255,255,255,0.75) inset,
+      0 -2px 0 rgba(0,0,0,0.12) inset,
+      2px 0 4px rgba(0,0,0,0.18),
+      0 4px 14px rgba(0,0,0,0.32);
+    transition: transform 0.07s ease, box-shadow 0.07s ease;
+  }
+
+  .ipod-wheel.pressed .ipod-wheel-ring {
+    transform: scale(0.955);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.4) inset,
+      0 -1px 0 rgba(0,0,0,0.18) inset,
+      1px 0 2px rgba(0,0,0,0.15),
+      0 2px 6px rgba(0,0,0,0.22);
+  }
+
+  /* 휠 라벨 */
+  .ipod-wheel-label {
+    position: absolute;
+    font-family: -apple-system, 'Helvetica Neue', Helvetica, sans-serif;
+    font-size: calc(65vh * 0.018);
+    font-weight: 600;
+    color: #888;
+    letter-spacing: 0.4px;
+    pointer-events: none;
+    z-index: 2;
+    line-height: 1;
+  }
+  .ipod-wheel-label.menu {
+    top: calc(65vh * 0.018);
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .ipod-wheel-label.back {
+    left: calc(65vh * 0.018);
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: calc(65vh * 0.028);
+  }
+  .ipod-wheel-label.fwd {
+    right: calc(65vh * 0.018);
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: calc(65vh * 0.028);
+  }
+  .ipod-wheel-label.play {
+    bottom: calc(65vh * 0.018);
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: calc(65vh * 0.024);
+  }
+
+  /* 중앙 버튼 */
+  .ipod-center-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(65vh * 0.145);
+    height: calc(65vh * 0.145);
+    border-radius: 50%;
+    background: radial-gradient(ellipse at 40% 36%, #e2e2e2 0%, #bcbcbc 55%, #acacac 100%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.75) inset,
+      0 -1px 0 rgba(0,0,0,0.1) inset,
+      0 2px 5px rgba(0,0,0,0.28);
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  /* 리플 애니메이션 */
+  .ipod-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.45);
+    pointer-events: none;
+    z-index: 1;
+    animation: ipodRipple 0.38s ease-out forwards;
+  }
+  @keyframes ipodRipple {
+    from { opacity: 0.65; transform: scale(0); }
+    to   { opacity: 0;   transform: scale(1); }
+  }
+
+  /* Archive 패널 */
+  #archivePanel {
+    position: fixed; bottom: -100%; left: 0; width: 50%; height: 70%;
+    background: #1a1a1a; border-radius: 20px 20px 0 0; z-index: 200;
+    transition: bottom 0.4s cubic-bezier(0.77,0,0.175,1);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  #archivePanel.open { bottom: 0; }
+  .archive-header { padding: 20px 28px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #333; }
+  .archive-header h3 { color: #fff; font-size: 18px; font-weight: 700; }
+  .archive-close { width: 30px; height: 30px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 14px; }
+  .archive-tabs { display: flex; padding: 12px 28px 0; }
+  .archive-tab  { padding: 8px 20px; font-size: 13px; color: #888; cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; }
+  .archive-tab.active { color: #fff; border-bottom-color: #1db954; }
+  .archive-list  { flex: 1; overflow-y: auto; padding: 12px 0; }
+  .archive-row   { display: flex; align-items: center; padding: 10px 28px; gap: 12px; border-bottom: 1px solid #2a2a2a; cursor: pointer; transition: background 0.15s; }
+  .archive-row:hover { background: #252525; }
+  .archive-tag   { font-size: 18px; flex-shrink: 0; }
+  .archive-info  { flex: 1; }
+  .archive-name  { font-size: 13px; color: #fff; font-weight: 600; }
+  .archive-sub   { font-size: 11px; color: #666; margin-top: 2px; }
+  .archive-empty { text-align: center; color: #555; font-size: 13px; padding: 40px 20px; }
+</style>
+</head>
+<body>
+
+<!-- ── 랜딩 1화면: main_image1 풀스크린 ── -->
+<div id="landing">
+  <!-- 배경 이미지 — contain으로 전체 표시, 흰 배경 위에 -->
+  <img id="landingMainImg" style="
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: contain;
+    object-position: center;
+    pointer-events: none;
+    z-index: 1;
+  " draggable="false">
+
+  <!-- 하단 슬라이더 -->
+  <div id="landingSlider" style="
+    position: absolute; bottom: 7%; left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    z-index: 3;
+    touch-action: none;
+  ">
+    <div id="sliderTrackLanding" style="
+      position: relative;
+      width: 300px; height: 56px;
+      border-radius: 100px;
+      background: rgba(0,0,0,0.10);
+      border: 1px solid rgba(0,0,0,0.15);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.8) inset, 0 2px 8px rgba(0,0,0,0.12);
+      overflow: hidden;
+      cursor: default;
+    ">
+      <!-- fill -->
+      <div id="sliderLandingFill" style="
+        position: absolute; left: 0; top: 0; height: 100%; width: 0%;
+        background: linear-gradient(90deg, rgba(0,0,0,0.08), rgba(0,0,0,0.02));
+        border-radius: 100px;
+      "></div>
+
+      <!-- shimmer 텍스트 -->
+      <div style="
+        position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+        display: flex; align-items: center; justify-content: center;
+        pointer-events: none;
+        font-family: -apple-system, 'Helvetica Neue', sans-serif;
+        font-size: 15px; font-weight: 300; letter-spacing: 0.06em;
+        color: transparent;
+        background: linear-gradient(90deg,
+          rgba(160,160,160,0.7) 0%, rgba(160,160,160,0.7) 28%,
+          rgba(60,60,60,1) 46%, rgba(60,60,60,1) 54%,
+          rgba(160,160,160,0.7) 72%, rgba(160,160,160,0.7) 100%
+        );
+        background-size: 200% auto;
+        -webkit-background-clip: text; background-clip: text;
+        animation: shimmer 2.4s linear infinite;
+        padding-left: 58px;
+      ">slide to enter</div>
+
+      <!-- 핸들 -->
+      <div id="sliderHandle" style="
+        position: absolute; left: 4px; top: 50%;
+        transform: translateY(-50%);
+        width: 48px; height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(180deg, #f0f0f0 0%, #d0d0d0 45%, #b8b8b8 50%, #a0a0a0 100%);
+        border: 1px solid rgba(0,0,0,0.2);
+        box-shadow: 0 1px 0 rgba(255,255,255,0.7) inset, 0 3px 8px rgba(0,0,0,0.4);
+        display: flex; align-items: center; justify-content: center;
+        cursor: grab; z-index: 2; user-select: none;
+      ">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M4 9H14M14 9L9.5 4.5M14 9L9.5 13.5" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 랜딩 2화면: 검정 배경 + landing-hero 중앙 contain ── -->
+<div id="landing2" style="
+  position: fixed; inset: 0;
+  background: #000;
+  z-index: 9998;
+  display: none; opacity: 0;
+  transition: opacity 0.5s ease;
+">
+  <img id="landingHeroImg" style="
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 72vw;
+    max-height: 80vh;
+    width: auto; height: auto;
+    object-fit: contain;
+    pointer-events: none;
+  " draggable="false">
+</div>
+
+<style>
+  @keyframes shimmer {
+    0%   { background-position: 100% center; }
+    100% { background-position: -100% center; }
+  }
+</style>
+
+<!-- ── 손 화면 ── -->
+<div id="handScreen">
+  <img id="handImg" src="hand.png" draggable="false">
+  <div class="nail-zone" id="nail-pinky"  data-playlist="0" title="새끼"></div>
+  <div class="nail-zone" id="nail-ring"   data-playlist="1" title="약지"></div>
+  <div class="nail-zone" id="nail-middle" data-playlist="2" title="중지"></div>
+  <div class="nail-zone" id="nail-index"  data-playlist="3" title="검지"></div>
+  <div class="nail-zone" id="nail-thumb"  data-playlist="4" title="엄지"></div>
+</div>
+
+<!-- ── 줌인 오버레이 ── -->
+<div id="zoomOverlay">
+  <canvas id="zoomCanvas"></canvas>
+</div>
+
+<!-- ── 메인 앱 ── -->
+<div id="app">
+  <div id="panel-left">
+    <div id="nailWrap" style="position:relative; width:100%; height:78vh; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+      <img id="nailImg" src="NAIL-1-0.png" style="height:100%; width:auto; pointer-events:none; display:block; object-fit:contain;" draggable="false" onerror="this.style.display='none'">
+      <img id="clipperImg" src="clipper.png" draggable="false">
+      <div style="position:absolute; top:15%; left:50%; transform:translateX(-50%); text-align:center; width:55%;">
+        <p style="font-family:Arial,Helvetica,sans-serif; color:#999; font-size:1.3vh; letter-spacing:0.18em; font-weight:400; margin-bottom:20px; white-space:nowrap; text-transform:uppercase;">DRAG to grow</p>
+        <div id="sliderTrack" style="position:relative; width:30%; height:3px; background:#555; margin:0 auto;">
+          <div id="sliderFill" style="height:100%; background:#000; width:0%;"></div>
+          <div id="sliderThumb" style="position:absolute; top:50%; left:0%; transform:translate(-50%,-50%); width:14px; height:14px; background:#000; border-radius:50%; cursor:grab; pointer-events:all;"></div>
+        </div>
+      </div>
+    </div>
+    <div id="leftBottomBar">
+      <div class="left-btn" id="biteBtn">
+        <span class="btn-label">Bite</span>
+      </div>
+      <div class="left-btn" id="clipperBtn">
+        <span class="btn-label">Clipper</span>
+      </div>
+      <div class="left-btn" id="archiveBtn">
+        <span class="btn-label">Jar</span>
+      </div>
+    </div>
+  </div>
+
+  <img id="biteImg" src="bite.png" draggable="false">
+
+  <!-- ── 오른쪽: 아이팟 ── -->
+  <div id="panel-right">
+    <div class="ipod-wrap">
+      <div class="ipod-body">
+
+        <!-- 스크린 -->
+        <div class="ipod-screen-bezel">
+          <div class="ipod-screen" id="ipodScreen">
+
+            <!-- 타이틀바 -->
+            <div class="ipod-statusbar">
+              <div class="ipod-battery">
+                <div class="ipod-battery-shell"><div class="ipod-battery-fill"></div></div>
+              </div>
+              <span class="ipod-statusbar-title" id="ipodTitle">플레이리스트 #1</span>
+              <div style="width:calc(65vh * 0.022);"></div>
+            </div>
+
+            <!-- 커버 + 현재 곡 정보 -->
+            <div class="ipod-cover-row">
+              <div class="ipod-pl-cover" id="ipodPlCover"></div>
+              <div class="ipod-now-info" id="ipodNowInfo">
+                <div class="ipod-now-empty" id="ipodNowEmpty">휠을 눌러<br>곡을 추가하세요</div>
+                <div class="ipod-now-title" id="ipodNowTitle" style="display:none;"></div>
+                <div class="ipod-now-artist" id="ipodNowArtist" style="display:none;"></div>
+                <div class="ipod-now-duration" id="ipodNowDur" style="display:none;"></div>
+              </div>
+            </div>
+
+            <!-- 곡 목록 -->
+            <div class="ipod-tracklist" id="ipodTracklist"></div>
+
+            <!-- 토스트 -->
+            <div class="ipod-toast" id="ipodToast"></div>
+          </div>
+        </div>
+
+        <!-- 휠 -->
+        <div class="ipod-wheel-wrap">
+          <div class="ipod-wheel" id="ipodWheel">
+            <div class="ipod-wheel-ring"></div>
+            <span class="ipod-wheel-label menu">MENU</span>
+            <span class="ipod-wheel-label back">⏮</span>
+            <span class="ipod-wheel-label fwd">⏭</span>
+            <span class="ipod-wheel-label play">▶ ‖</span>
+            <div class="ipod-center-btn"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="archivePanel">
+    <div class="archive-header">
+      <h3>📦 Archive</h3>
+      <div class="archive-close" id="archiveClose">✕</div>
+    </div>
+    <div class="archive-tabs">
+      <div class="archive-tab active" data-tab="cut">✂️ 정리된 기억</div>
+    </div>
+    <div class="archive-list" id="archiveList"></div>
+  </div>
+</div>
+
+<script>
+  // ══════════════════════════════
+  // 랜딩 — 슬라이드 to enter
+  // ══════════════════════════════
+  const landing     = document.getElementById('landing');
+  const landingHero = document.getElementById('landingHero');
+  const landingSlider = document.getElementById('landingSlider');
+  const landing2    = document.getElementById('landing2');
+  const app         = document.getElementById('app');
+
+  // 랜딩 1 이미지 로드
+  (function() {
+    const img = document.getElementById('landingMainImg');
+    img.src = 'main.png';
+    img.onerror = function() {
+      // 폴백 시도
+      const fallbacks = ['main.jpg','main.jpeg','main.webp'];
+      let i = 0;
+      const tryNext = () => {
+        if (i < fallbacks.length) { this.src = fallbacks[i++]; }
+      };
+      this.onerror = tryNext;
+      tryNext();
+    };
+  })();
+
+  // 랜딩 2 이미지 — 미리 준비만 해두기
+  (function() {
+    const img = document.getElementById('landingHeroImg');
+    const bases = ['Landing-hero', 'landing-hero', 'Landing-Hero', 'landing_hero'];
+    const exts  = ['png', 'jpg', 'jpeg', 'webp'];
+    let bi = 0, ei = 0;
+    function tryNext() { img.src = `${bases[bi]}.${exts[ei]}`; }
+    img.onerror = function() {
+      ei++;
+      if (ei >= exts.length) { ei = 0; bi++; }
+      if (bi < bases.length) tryNext();
+    };
+    tryNext();
+  })();
+
+  // 슬라이더 0.8초 후 등장
+  setTimeout(() => { landingSlider.style.opacity = '1'; }, 800);
+
+  // 슬라이드 드래그
+  const handle     = document.getElementById('sliderHandle');
+  const fillEl     = document.getElementById('sliderLandingFill');
+  let isDragging   = false;
+  let startX       = 0;
+  let handleLeft   = 4;
+  const TRACK_W    = 300;
+  const HANDLE_W   = 48;
+  const MAX_LEFT   = TRACK_W - HANDLE_W - 4;
+  const THRESHOLD  = MAX_LEFT * 0.82;
+
+  function onDragStart(clientX) {
+    if (landing.dataset.done) return;
+    isDragging = true;
+    startX = clientX - handleLeft;
+    handle.style.transition = 'none';
+    fillEl.style.transition  = 'none';
+  }
+  function onDragMove(clientX) {
+    if (!isDragging) return;
+    handleLeft = Math.max(4, Math.min(MAX_LEFT, clientX - startX));
+    handle.style.left = handleLeft + 'px';
+    fillEl.style.width = ((handleLeft - 4) / (MAX_LEFT - 4) * 100) + '%';
+  }
+  function onDragEnd() {
+    if (!isDragging) return;
+    isDragging = false;
+    handle.style.transition = 'left 0.28s ease';
+    fillEl.style.transition  = 'width 0.28s ease';
+    if (handleLeft >= THRESHOLD) {
+      handle.style.left = MAX_LEFT + 'px';
+      fillEl.style.width = '100%';
+      setTimeout(showLanding2, 180);
+    } else {
+      handleLeft = 4;
+      handle.style.left = '4px';
+      fillEl.style.width = '0%';
+    }
+  }
+
+  function showLanding2() {
+    landing.classList.add('fadeout');
+    landing2.style.display = 'block';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      landing2.style.opacity = '1';
+    }));
+    setTimeout(goToApp, 2200);
+  }
+
+  function goToApp() {
+    if (landing.dataset.done) return;
+    landing.dataset.done = '1';
+    landing2.style.opacity = '0';
+    setTimeout(() => { landing2.style.display = 'none'; }, 500);
+    landing.style.display = 'none';
+    app.classList.add('visible');
+    resetIdleTimer();
+  }
+
+  handle.addEventListener('mousedown',  e => { e.preventDefault(); onDragStart(e.clientX); });
+  handle.addEventListener('touchstart', e => { onDragStart(e.touches[0].clientX); }, { passive: true });
+  document.addEventListener('mousemove', e => onDragMove(e.clientX));
+  document.addEventListener('touchmove', e => onDragMove(e.touches[0].clientX), { passive: true });
+  document.addEventListener('mouseup',  onDragEnd);
+  document.addEventListener('touchend', onDragEnd);
+
+  // ══════════════════════════════
+  // 3분 비활동 → 랜딩으로 복귀
+  // ══════════════════════════════
+  let idleTimer = null;
+  const IDLE_MS = 3 * 60 * 1000; // 3분
+
+  function resetIdleTimer() {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(returnToLanding, IDLE_MS);
+  }
+
+  function returnToLanding() {
+    app.classList.remove('visible');
+    landing.style.display = '';
+    landing.dataset.done = '';
+    landing.style.opacity = '1';
+    landing.classList.remove('fadeout');
+    landing2.style.display = 'none';
+    landing2.style.opacity = '0';
+    // 슬라이더 리셋
+    handleLeft = 4;
+    handle.style.transition = 'none';
+    fillEl.style.transition  = 'none';
+    handle.style.left = '4px';
+    fillEl.style.width = '0%';
+    landingSlider.style.opacity = '1';
+  }
+
+  // 마우스/키/터치 움직임마다 타이머 리셋
+  ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(ev => {
+    document.addEventListener(ev, () => { if (app.classList.contains('visible')) resetIdleTimer(); }, { passive: true });
+  });
+
+  // ══════════════════════════════
+  // 플레이리스트 데이터
+  // ══════════════════════════════
+  const playlists = [
+    {
+      name: '플레이리스트 #1',
+      color: 'linear-gradient(135deg, #a8edea, #fed6e3)',
+      nailPrefix: 'nail-1',
+      tracks: [
+        { title: 'Girls Feels Food',        artist: 'FKA twigs',          album: 'EUSEXUA',                       duration: '3:56' },
+        { title: 'Dó a Dó',                 artist: 'Zé Ibarra',           album: 'Marquês, 256.',                 duration: '4:18' },
+        { title: 'take it slow',            artist: 'nate sib',            album: 'take it slow',                  duration: '2:17' },
+        { title: "Crushin'",                artist: 'Cola Boyy',           album: 'Quit to Play Chess',            duration: '2:08' },
+        { title: 'Sick!!!',                 artist: 'goethe',              album: 'Sick!!!',                       duration: '4:04' },
+        { title: 'AMERICAN GIRL',           artist: 'Tiffany Day',         album: 'AMERICAN GIRL',                 duration: '2:56' },
+        { title: 'thing u do',              artist: 'Tori Kelly',          album: 'TORI.',                         duration: '4:05' },
+        { title: 'Teenage Fantasy',         artist: 'Jorja Smith',         album: 'Lost & Found',                  duration: '3:46' },
+        { title: 'Put Your Records on',     artist: 'Corinne Bailey Rae',  album: 'Corinne Bailey Rae',            duration: '3:35' },
+        { title: 'Il pleut',                artist: 'Emilie Simon',        album: 'Emilie Simon',                  duration: '3:28' },
+      ]
+    },
+    {
+      name: '플레이리스트 #2',
+      color: 'linear-gradient(135deg, #0f0c29, #302b63)',
+      nailPrefix: 'nail-2',
+      tracks: [
+        { title: 'Falaise',                              artist: 'Floating Points',        album: 'Crush',                            duration: '3:54' },
+        { title: 'What',                                 artist: 'Smerz',                  album: 'Big city life',                    duration: '0:26' },
+        { title: 'think of u',                          artist: 'Cucina Sonora, Pentola',  album: 'think of u',                       duration: '3:58' },
+        { title: 'Space 1',                             artist: 'Nala Sinephro',           album: 'Space 1.8',                        duration: '4:08' },
+        { title: '#bfbfbf (12:20:00pm-05:07:53pm)',     artist: 'Jun Futamata',            album: '#bfbfbf (12:20:00pm-05:07:53pm)',  duration: '4:47' },
+        { title: 'Cold',                                artist: 'After',                   album: 'Cold',                             duration: '2:57' },
+        { title: 'When Prophecy Fails',                 artist: 'Barker',                  album: 'Debiasing EP',                     duration: '3:43' },
+        { title: 'Clouds',                              artist: 'Hiroshi Yoshimura',        album: 'Music for Nine Post Cards',        duration: '5:54' },
+        { title: 'Xtal',                                artist: 'Aphex Twin',              album: 'Selected Ambient Works 85-92',     duration: '4:53' },
+        { title: 'Rae',                                 artist: 'Autechre',                album: 'LP5',                              duration: '7:13' },
+      ]
+    },
+    {
+      name: '플레이리스트 #3',
+      color: 'linear-gradient(135deg, #f9d423, #ff4e50)',
+      nailPrefix: 'nail-3',
+      tracks: [
+        { title: '404 (New Era)',            artist: 'KiiKii',              album: 'Delulu Pack',                   duration: '2:59' },
+        { title: '뛰어(JUMP)',               artist: 'BLACKPINK',           album: '뛰어(JUMP)',                     duration: '2:44' },
+        { title: 'What You Want',            artist: 'CORTIS',              album: 'What You Want',                 duration: '3:14' },
+        { title: 'Gameboy',                  artist: 'KATSEYE',             album: 'BEAUTIFUL CHAOS',               duration: '3:05' },
+        { title: 'STYLE',                    artist: 'Hearts2Hearts',       album: 'STYLE',                         duration: '3:29' },
+        { title: 'NOT CUTE ANYMORE',         artist: 'ILLIT',               album: 'NOT CUTE ANYMORE',              duration: '2:11' },
+        { title: "What's a girl to do",      artist: 'DAYOUNG',             album: "What's a girl to do",           duration: '2:10' },
+        { title: 'FaceTime',                 artist: 'LNGSHOT',             album: 'SHOT CALLERS',                  duration: '2:47' },
+        { title: 'PINKY UP',                 artist: 'KATSEYE',             album: 'PINKY UP',                      duration: '2:11' },
+        { title: 'Sticky',                   artist: 'NCT WISH',            album: 'Ode to Love',                   duration: '2:55' },
+      ]
+    },
+    {
+      name: '플레이리스트 #4',
+      color: 'linear-gradient(135deg, #43cea2, #185a9d)',
+      nailPrefix: 'nail-4',
+      tracks: [
+        { title: '한걸음 더',                          artist: '윤상',              album: '윤상 Best',                      duration: '3:07' },
+        { title: '오래된 친구',                        artist: '빛과 소금',         album: '빛과 소금',                       duration: '3:47' },
+        { title: '달리기',                             artist: '윤상',              album: 'Cliche',                         duration: '3:38' },
+        { title: '봄이 와 (Feat.롤러코스터)',           artist: '김현철',            album: '… 그리고 김현철',                duration: '4:57' },
+        { title: '김밥',                               artist: 'The Jadu',          album: 'The Jadu 3',                     duration: '3:45' },
+        { title: '그대안의 블루 (Duet With 이소라)',    artist: '김현철, 이소라',    album: '영화 그대안의 블루 OST',          duration: '3:35' },
+        { title: '여름 안에서',                        artist: '듀스',              album: 'Best',                           duration: '4:34' },
+        { title: 'Meaning of You',                    artist: '양수경',            album: 'Yang Soo Kyung II',              duration: '4:23' },
+        { title: '파도',                               artist: 'Un',               album: 'Traveling You',                  duration: '4:11' },
+        { title: '대화가 필요해',                      artist: 'The Jadu',          album: 'Change Yourself',                duration: '4:00' },
+      ]
+    },
+    {
+      name: '플레이리스트 #5',
+      color: 'linear-gradient(135deg, #f12711, #f5af19)',
+      nailPrefix: 'nail-5',
+      tracks: [
+        { title: 'party 4 u',                                   artist: 'Charli xcx',         album: "how I'm feeling now",    duration: '4:56' },
+        { title: 'CHANEL',                                      artist: 'Tyla',               album: 'CHANEL',                 duration: '3:08' },
+        { title: 'Taste',                                       artist: 'Sabrina Carpenter',  album: "Short n' Sweet",         duration: '2:37' },
+        { title: 'Toxic',                                       artist: 'Britney Spears',     album: 'In the Zone',            duration: '3:18' },
+        { title: 'Say So',                                      artist: 'Doja Cat',           album: 'Hot Pink',               duration: '3:57' },
+        { title: 'Peaches (feat. Daniel Caesar & Giveon)',      artist: 'Justin Bieber',      album: 'Justice',                duration: '3:18' },
+        { title: 'Illegal',                                     artist: 'PinkPantheress',     album: 'Fancy that',             duration: '2:29' },
+        { title: 'Abracadabra',                                 artist: 'Lady Gaga',          album: 'MAYHEM',                 duration: '3:43' },
+        { title: 'Folded',                                      artist: 'Kehlani',            album: 'Folded',                 duration: '3:58' },
+        { title: 'Sugar On My Tongue',                          artist: 'Tyler, The Creator', album: "DON'T TAP THE GLASS",    duration: '2:33' },
+      ]
+    },
+  ];
+
+  const playlistSteps = [0, 0, 0, 0, 0];
+
+  let currentPlaylist = playlists[0];
+  let currentStep = 0;
+  let allTracks   = [];
+  let archiveCut  = [];
+  let clipperMode = false;
+  let biteMode    = false;
+
+  // 아이팟 상태
+  let ipodActiveIdx = 0;
+  let ipodAddCounts = {};
+
+  const nailImg     = document.getElementById('nailImg');
+  const nailWrap    = document.getElementById('nailWrap');
+  const clipperImg  = document.getElementById('clipperImg');
+  const biteImg     = document.getElementById('biteImg');
+  const sliderFill  = document.getElementById('sliderFill');
+  const sliderThumb = document.getElementById('sliderThumb');
+  const archivePanel = document.getElementById('archivePanel');
+  const archiveList  = document.getElementById('archiveList');
+
+  // ══════════════════════════════
+  // 커버 스타일 (왼쪽 패널용 — 미사용이지만 유지)
+  // ══════════════════════════════
+  function getCoverStyle(plIdx, step) {
+    if (step === 0) return `background: ${playlists[plIdx].color};`;
+    return `background-image: url('cover-${plIdx+1}-${step}.png'); background-size: cover; background-position: center;`;
+  }
+
+  // ══════════════════════════════
+  // 앨범 썸네일 색상 폴백
+  // ══════════════════════════════
+  const thumbPalette = [
+    '#e8c4cc','#c4d8e8','#c4e8d2','#e8e0c4','#d4c4e8',
+    '#c4e8e4','#e8d0c4','#cce8c4','#e8c4e0','#c4cce8'
+  ];
+
+  // ══════════════════════════════
+  // 아이팟 렌더
+  // ══════════════════════════════
+  function renderIpod() {
+    const plIdx = playlists.indexOf(currentPlaylist);
+    document.getElementById('ipodTitle').textContent = currentPlaylist.name;
+
+    const visibleTracks = allTracks.filter(t => t.visible);
+    const activeTrack = visibleTracks[ipodActiveIdx] || null;
+
+    // ① 플레이리스트 커버 — cover-N-N (곡 추가마다 바뀜, 확장자 자동 감지)
+    const plCoverEl = document.getElementById('ipodPlCover');
+    if (currentStep > 0) {
+      const coverBase = `cover-${plIdx+1}-${currentStep}`;
+      const coverExts = ['jpeg','jpg','webp','png'];
+      let ci = 0;
+      const tryNextCover = () => {
+        plCoverEl.style.cssText = `
+          width: calc(65vh * 0.19); height: calc(65vh * 0.19); flex-shrink: 0;
+          background: url('${coverBase}.${coverExts[ci]}') center/cover no-repeat;
+        `;
+        // 로드 실패 감지용 임시 img
+        const testImg = new Image();
+        testImg.onload = () => {}; // 성공
+        testImg.onerror = () => {
+          ci++;
+          if (ci < coverExts.length) tryNextCover();
+          else plCoverEl.style.cssText = `width:calc(65vh*0.19);height:calc(65vh*0.19);flex-shrink:0;background:${currentPlaylist.color};`;
+        };
+        testImg.src = `${coverBase}.${coverExts[ci]}`;
+      };
+      tryNextCover();
+    } else {
+      plCoverEl.style.cssText = `
+        width: calc(65vh * 0.19); height: calc(65vh * 0.19); flex-shrink: 0;
+        background: ${currentPlaylist.color};
+      `;
+    }
+
+    // ② 현재 선택 곡 정보
+    const emptyEl   = document.getElementById('ipodNowEmpty');
+    const titleEl   = document.getElementById('ipodNowTitle');
+    const artistEl  = document.getElementById('ipodNowArtist');
+    const durEl     = document.getElementById('ipodNowDur');
+    if (activeTrack) {
+      emptyEl.style.display  = 'none';
+      titleEl.style.display  = '';
+      artistEl.style.display = '';
+      durEl.style.display    = '';
+      titleEl.textContent  = activeTrack.track.title;
+      artistEl.textContent = activeTrack.track.artist;
+      durEl.textContent    = activeTrack.track.duration;
+    } else {
+      emptyEl.style.display  = '';
+      titleEl.style.display  = 'none';
+      artistEl.style.display = 'none';
+      durEl.style.display    = 'none';
+    }
+
+    // ③ 곡 목록 — 앨범 썸네일은 playlist-N-N.png
+    const list = document.getElementById('ipodTracklist');
+    list.innerHTML = '';
+    visibleTracks.forEach((item, idx) => {
+      const isActive = idx === ipodActiveIdx;
+      const t = item.track;
+
+      const row = document.createElement('div');
+      row.className = 'ipod-track-row' + (isActive ? ' ipod-active-row' : '');
+
+      const numEl = document.createElement('div');
+      numEl.className = 'ipod-track-num';
+      numEl.textContent = item.num;
+
+      const thumb = document.createElement('img');
+      thumb.className = 'ipod-track-thumb';
+      thumb.style.cssText = `object-fit:cover; object-position:center;`;
+
+      // 확장자 자동 탐색 (클로저 버그 방지용 즉시실행함수)
+      (function(el, base, palette, num) {
+        const exts = ['jpeg', 'jpg', 'webp', 'png'];
+        let i = 0;
+        el.src = `${base}.${exts[i]}`;
+        el.onerror = function() {
+          i++;
+          if (i < exts.length) {
+            this.src = `${base}.${exts[i]}`;
+          } else {
+            const fallback = document.createElement('div');
+            fallback.className = 'ipod-track-thumb';
+            fallback.style.cssText = `background:${palette[num % palette.length]}; flex-shrink:0;`;
+            this.replaceWith(fallback);
+          }
+        };
+      })(thumb, `playlist-${plIdx+1}-${item.originalIdx || item.num}`, thumbPalette, item.originalIdx || item.num);
+
+      const textWrap = document.createElement('div');
+      textWrap.className = 'ipod-track-text';
+      textWrap.innerHTML = `<div class="ipod-track-title">${t.title}</div><div class="ipod-track-artist">${t.artist}</div>`;
+
+      const durRow = document.createElement('div');
+      durRow.className = 'ipod-track-dur';
+      durRow.textContent = t.duration;
+
+      row.appendChild(numEl);
+      row.appendChild(thumb);
+      row.appendChild(textWrap);
+      row.appendChild(durRow);
+
+      row.addEventListener('click', (e) => {
+        e.stopPropagation();
+        ipodActiveIdx = idx;
+        renderIpod();
+      });
+
+      list.appendChild(row);
+    });
+
+    // 활성 행 스크롤
+    setTimeout(() => {
+      const activeRow = list.querySelector('.ipod-active-row');
+      if (activeRow) activeRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+  }
+
+  // ══════════════════════════════
+  // nail 이미지 src 설정 (확장자 자동 탐색)
+  // ══════════════════════════════
+  function setNailImg(base) {
+    const exts = ['png','jpg','jpeg','webp'];
+    let i = 0;
+    nailImg.style.display = 'block';
+    nailImg.src = base + '.' + exts[i];
+    nailImg.onerror = function() {
+      i++;
+      if (i < exts.length) { this.src = base + '.' + exts[i]; }
+      else { this.style.display = 'none'; }
+    };
+  }
+
+  // ══════════════════════════════
+  // applyStep
+  // ══════════════════════════════
+  function applyStep(step) {
+    step = Math.max(0, Math.min(10, step));
+    currentStep = step;
+    const plIdx = playlists.indexOf(currentPlaylist);
+    playlistSteps[plIdx] = step;
+
+    // 슬라이더 위치: step 0이면 맨 왼쪽(0%), step 1~10은 1~10 범위에서 0~100%
+    const displayPct = step === 0 ? 0 : ((step - 1) / 9 * 100);
+    sliderFill.style.width  = displayPct + '%';
+    sliderThumb.style.left  = displayPct + '%';
+    // nail 이미지 업데이트 — NAIL-플레이리스트번호-곡번호
+    // step 0 = 기본 손톱(NAIL-N-0), step 1~10 = NAIL-N-1 ~ NAIL-N-10
+    const nailBase = `NAIL-${plIdx + 1}-${step}`;
+    setNailImg(nailBase);
+
+    while (allTracks.length < step) {
+      const idx = allTracks.length;
+      allTracks.push({ num: idx + 1, originalIdx: idx + 1, track: currentPlaylist.tracks[idx], visible: true });
+    }
+    while (allTracks.length > step) allTracks.pop();
+
+    // 활성 인덱스 범위 조정
+    const visCount = allTracks.filter(t => t.visible).length;
+    if (visCount > 0) {
+      ipodActiveIdx = Math.min(ipodActiveIdx, visCount - 1);
+    } else {
+      ipodActiveIdx = 0;
+    }
+
+    renderIpod();
+
+    const existing = document.getElementById('nailWarning');
+    if (step === 10) {
+      if (!existing) {
+        const warn = document.createElement('div');
+        warn.id = 'nailWarning';
+        warn.style.cssText = 'position:absolute; top:2%; left:50%; transform:translateX(-50%); color:#ff2020; font-family:Arial,sans-serif; font-size:2vh; white-space:nowrap; z-index:30; pointer-events:none; animation:warningPulse 0.8s ease infinite alternate;';
+        warn.innerHTML = '⚠️ Time to use the clipper';
+        nailWrap.appendChild(warn);
+      }
+    } else {
+      if (existing) existing.remove();
+    }
+  }
+
+  // ══════════════════════════════
+  // 아이팟 토스트
+  // ══════════════════════════════
+  function showIpodToast(msg) {
+    const t = document.getElementById('ipodToast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 1600);
+  }
+
+  // ══════════════════════════════
+  // 플레이리스트 선택 오버레이
+  // ══════════════════════════════
+  // ipod 스크린 안에 오버레이로 표시
+  let isPlaylistView = false;
+
+  function showPlaylistSelector() {
+    isPlaylistView = true;
+    const screen = document.getElementById('ipodScreen');
+    let overlay = document.getElementById('ipodPlOverlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'ipodPlOverlay';
+      overlay.style.cssText = `
+        position:absolute; inset:0; background:#fff; z-index:50;
+        display:flex; flex-direction:column; overflow:hidden;
+      `;
+      screen.appendChild(overlay);
+    }
+    overlay.innerHTML = '';
+
+    // 타이틀바
+    const bar = document.createElement('div');
+    bar.style.cssText = `
+      background: linear-gradient(180deg,#5ab4f5 0%,#1e78d4 100%);
+      height:calc(65vh * 0.026); display:flex; align-items:center;
+      justify-content:center; flex-shrink:0;
+    `;
+    bar.innerHTML = `<span style="font-size:calc(65vh*0.015);font-weight:700;color:#fff;font-family:-apple-system,sans-serif;">Playlists</span>`;
+    overlay.appendChild(bar);
+
+    // 플레이리스트 목록
+    const plIdx = playlists.indexOf(currentPlaylist);
+    playlists.forEach((pl, idx) => {
+      const row = document.createElement('div');
+      const isActive = idx === plIdx;
+      row.style.cssText = `
+        display:flex; align-items:center; gap:calc(65vh*0.01);
+        height:calc(65vh*0.07); padding:0 calc(65vh*0.012);
+        border-bottom:0.5px solid #f0f0f0; cursor:pointer;
+        background:${isActive ? 'linear-gradient(90deg,#e8f4ff,#f0f8ff)' : '#fff'};
+        transition:background 0.08s;
+      `;
+
+      // 플레이리스트 컬러 썸네일
+      const thumb = document.createElement('div');
+      thumb.style.cssText = `
+        width:calc(65vh*0.055); height:calc(65vh*0.055);
+        border-radius:calc(65vh*0.005); flex-shrink:0;
+        background:${pl.color}; background-size:cover; background-position:center;
+      `;
+      // cover 이미지 있으면 시도
+      const step = playlistSteps[idx];
+      if (step > 0) {
+        const exts2 = ['jpeg','jpg','webp','png']; let ei2 = 0;
+        const base2 = `cover-${idx+1}-${step}`;
+        const ti2 = new Image();
+        ti2.onload  = () => { thumb.style.backgroundImage = `url('${base2}.${exts2[ei2]}')`; };
+        ti2.onerror = () => { ei2++; if(ei2<exts2.length){ ti2.src=`${base2}.${exts2[ei2]}`; } };
+        ti2.src = `${base2}.${exts2[ei2]}`;
+      }
+
+      const info = document.createElement('div');
+      info.style.cssText = 'flex:1; min-width:0;';
+      info.innerHTML = `
+        <div style="font-size:calc(65vh*0.018);font-weight:${isActive?'700':'500'};color:${isActive?'#1e78d4':'#111'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:-apple-system,sans-serif;">${pl.name}</div>
+        <div style="font-size:calc(65vh*0.013);color:#888;font-family:-apple-system,sans-serif;">${playlistSteps[idx]}곡 추가됨</div>
+      `;
+
+      const arrow = document.createElement('span');
+      arrow.style.cssText = `font-size:calc(65vh*0.018);color:${isActive?'#1e78d4':'#ccc'};`;
+      arrow.textContent = '›';
+
+      row.appendChild(thumb);
+      row.appendChild(info);
+      row.appendChild(arrow);
+
+      row.addEventListener('click', (e) => {
+        e.stopPropagation();
+        currentPlaylist = playlists[idx];
+        allTracks = [];
+        ipodActiveIdx = 0;
+        ipodAddCounts = {};
+        playlistSteps[idx] = 0;  // 항상 빈 상태로 시작
+        applyStep(0);
+        hidePlaylistSelector();
+        showIpodToast(pl.name + ' 선택됨');
+      });
+      overlay.appendChild(row);
+    });
+
+    // 힌트
+    const hint = document.createElement('div');
+    hint.style.cssText = `padding:calc(65vh*0.01); text-align:center; font-size:calc(65vh*0.013); color:#bbb; font-family:-apple-system,sans-serif;`;
+    hint.textContent = '▶‖ 를 눌러 선택 / MENU 닫기';
+    overlay.appendChild(hint);
+  }
+
+  function hidePlaylistSelector() {
+    isPlaylistView = false;
+    const overlay = document.getElementById('ipodPlOverlay');
+    if (overlay) overlay.remove();
+  }
+
+  // ══════════════════════════════
+  // 아이팟 휠 클릭 처리
+  // ══════════════════════════════
+  document.getElementById('ipodWheel').addEventListener('click', function(e) {
+    e.stopPropagation();
+    const wheel = this;
+
+    // 눌림 애니메이션
+    wheel.classList.add('pressed');
+    setTimeout(() => wheel.classList.remove('pressed'), 130);
+
+    // 리플
+    const rect = wheel.getBoundingClientRect();
+    const r = wheel.offsetWidth;
+    const rx = e.clientX - rect.left;
+    const ry = e.clientY - rect.top;
+    const ripple = document.createElement('div');
+    ripple.className = 'ipod-ripple';
+    ripple.style.cssText = `width:${r}px;height:${r}px;left:${rx - r/2}px;top:${ry - r/2}px;`;
+    wheel.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 420);
+
+    // 방향 계산
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const angle = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
+    const visibleTracks = allTracks.filter(t => t.visible);
+
+    if (isPlaylistView) {
+      // 플레이리스트 선택 화면에서는 위(MENU) = 닫기
+      if (angle < -45 && angle > -135) {
+        hidePlaylistSelector();
+      } else if (angle >= 45 && angle <= 135) {
+        // 아래 = 닫기
+        hidePlaylistSelector();
+      }
+      return;
+    }
+
+    if (angle > -45 && angle < 45) {
+      // 오른쪽(⏭) → 다음 곡 탐색
+      if (visibleTracks.length > 0) {
+        ipodActiveIdx = (ipodActiveIdx + 1) % visibleTracks.length;
+        showIpodToast('▶ ' + visibleTracks[ipodActiveIdx].track.title);
+        renderIpod();
+      }
+    } else if (angle >= 45 && angle <= 135) {
+      // 아래(▶‖) → 곡 추가
+      addSongViaWheel();
+    } else if (angle < -135 || angle > 135) {
+      // 왼쪽(⏮) → 이전 곡 탐색
+      if (visibleTracks.length > 0) {
+        ipodActiveIdx = (ipodActiveIdx - 1 + visibleTracks.length) % visibleTracks.length;
+        showIpodToast('◀ ' + visibleTracks[ipodActiveIdx].track.title);
+        renderIpod();
+      }
+    } else {
+      // 위(MENU) → 플레이리스트 선택
+      showPlaylistSelector();
+    }
+  });
+
+  function addSongViaWheel() {
+    if (currentStep < 10) {
+      applyStep(currentStep + 1);
+      const visibleTracks = allTracks.filter(t => t.visible);
+      if (visibleTracks.length > 0) {
+        const newIdx = visibleTracks.length - 1;
+        ipodActiveIdx = newIdx;
+        renderIpod();
+        showIpodToast('✓ ' + visibleTracks[newIdx].track.title + ' 추가됨');
+      }
+    } else {
+      showIpodToast('⚠ 꽉 찼어요! Clipper를 쓰세요');
+    }
+  }
+
+  // ══════════════════════════════
+  // 초기화
+  // ══════════════════════════════
+  applyStep(0);
+
+  // ══════════════════════════════
+  // Bite 버튼 — 현재 선택된 곡 제거
+  // ══════════════════════════════
+  document.getElementById('biteBtn').addEventListener('click', e => {
+    e.stopPropagation();
+    const visible = allTracks.filter(t => t.visible);
+    if (biteMode || visible.length === 0) return;
+    biteMode = true;
+    biteImg.classList.add('visible');
+    setTimeout(() => {
+      document.body.classList.add('chew');
+      document.body.addEventListener('animationend', () => document.body.classList.remove('chew'), { once: true });
+      explodeNailPieces();
+      // 현재 선택된 곡 제거
+      const visibleNow = allTracks.filter(t => t.visible);
+      const target = visibleNow[ipodActiveIdx] || visibleNow[visibleNow.length - 1];
+      setTimeout(() => { biteImg.classList.remove('visible'); }, 1000);
+      setTimeout(() => {
+        target.visible = false;
+        currentStep = Math.max(0, currentStep - 1);
+        const plIdx = playlists.indexOf(currentPlaylist);
+        playlistSteps[plIdx] = currentStep;
+        sliderFill.style.width = (currentStep === 0 ? 0 : ((currentStep-1)/9*100)) + '%';
+        sliderThumb.style.left = (currentStep === 0 ? 0 : ((currentStep-1)/9*100)) + '%';
+        setNailImg(`NAIL-${plIdx+1}-${currentStep}`);
+        const visCount2 = allTracks.filter(t => t.visible).length;
+        ipodActiveIdx = Math.min(ipodActiveIdx, Math.max(0, visCount2 - 1));
+        renderIpod();
+        biteMode = false;
+      }, 1850);
+    }, 700);
+  });
+
+  // ══════════════════════════════
+  // 글리치 오디오 — Clipper 전용
+  // 순수 Audio 태그 방식 (file:// 완전 호환)
+  // ══════════════════════════════
+  function playGlitchAudio(plIdx, trackNum) {
+    const fileName = `playlist-${plIdx + 1}-${trackNum}.mp3`;
+    const audio = new Audio(fileName);
+    audio.volume = 1;
+
+    audio.addEventListener('canplaythrough', () => {
+      audio.play().catch(() => {});
+
+      const totalMs = 1800;
+      const startTime = Date.now();
+
+      // 피치/속도 급변 (80ms마다)
+      const rateTimer = setInterval(() => {
+        audio.playbackRate = 0.15 + Math.random() * 2.8;
+        if (Date.now() - startTime >= totalMs) clearInterval(rateTimer);
+      }, 80);
+
+      // 볼륨 스터터 (55ms마다 on/off)
+      const volTimer = setInterval(() => {
+        audio.volume = Math.random() > 0.35 ? 1 : 0;
+        if (Date.now() - startTime >= totalMs) clearInterval(volTimer);
+      }, 55);
+
+      // 정지 + 정리
+      setTimeout(() => {
+        clearInterval(rateTimer);
+        clearInterval(volTimer);
+        audio.volume = 0;
+        audio.pause();
+        audio.src = '';
+      }, totalMs);
+    }, { once: true });
+
+    // 로드 실패 시 조용히 무시
+    audio.addEventListener('error', () => {}, { once: true });
+    audio.load();
+  }
+
+  // ══════════════════════════════
+  // Clipper 버튼
+  // ══════════════════════════════
+  document.getElementById('clipperBtn').addEventListener('click', e => {
+    e.stopPropagation();
+    if (clipperMode || currentStep === 0) return;
+    clipperMode = true;
+
+    // 손톱 잘리는 소리
+    playClipSound();
+
+    clipperImg.classList.add('visible');
+    setTimeout(() => {
+      document.body.classList.add('shake');
+      document.body.addEventListener('animationend', () => document.body.classList.remove('shake'), { once: true });
+      explodeNailPieces();
+      doCut();
+      setTimeout(() => { clipperImg.classList.remove('visible'); clipperMode = false; }, 800);
+    }, 600);
+  });
+
+  function doCut() {
+    const visible = allTracks.filter(t => t.visible);
+    if (visible.length === 0) return;
+    // 항상 제일 위(첫번째) 곡 제거
+    visible.sort((a, b) => a.num - b.num);
+    const target = visible[0];
+    archiveCut.push({
+      name: target.track.title,
+      time: new Date().toLocaleTimeString(),
+      plIdx: playlists.indexOf(currentPlaylist),
+      originalIdx: target.originalIdx || target.num
+    });
+    allTracks = allTracks.filter(t => t !== target);
+    allTracks.forEach((t, i) => { t.num = i + 1; });
+    currentStep = Math.max(0, currentStep - 1);
+    const plIdx = playlists.indexOf(currentPlaylist);
+    playlistSteps[plIdx] = currentStep;
+    sliderFill.style.width = (currentStep === 0 ? 0 : ((currentStep-1)/9*100)) + '%';
+    sliderThumb.style.left = (currentStep === 0 ? 0 : ((currentStep-1)/9*100)) + '%';
+    setNailImg(`NAIL-${plIdx+1}-${currentStep}`);
+    const visCount = allTracks.filter(t => t.visible).length;
+    ipodActiveIdx = Math.min(ipodActiveIdx, Math.max(0, visCount - 1));
+    renderIpod();
+  }
+
+  // ══════════════════════════════
+  // 손톱 잘리는 소리 — Web Audio 합성
+  // ══════════════════════════════
+  function playClipSound() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+      // 짧고 날카로운 클릭 노이즈 (손톱 잘리는 느낌)
+      const bufLen = ctx.sampleRate * 0.08; // 80ms
+      const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufLen; i++) {
+        // 앞부분 임팩트 + 빠른 감쇠
+        const decay = Math.exp(-i / (ctx.sampleRate * 0.012));
+        data[i] = (Math.random() * 2 - 1) * decay;
+      }
+
+      // 고역 강조 필터 (딱! 하는 느낌)
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 3000;
+
+      // 두 번 연속 클릭 (clipper 특유의 딸깍딸깍)
+      [0, 0.06].forEach(offset => {
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.9, ctx.currentTime + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + offset + 0.07);
+        src.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        src.start(ctx.currentTime + offset);
+        src.stop(ctx.currentTime + offset + 0.1);
+      });
+
+      setTimeout(() => ctx.close(), 400);
+    } catch(e) {}
+  }
+
+  // ══════════════════════════════
+  // Archive 버튼
+  // ══════════════════════════════
+  document.getElementById('archiveBtn').addEventListener('click', e => {
+    e.stopPropagation();
+    archivePanel.classList.add('open');
+    renderArchive();
+  });
+  document.getElementById('archiveClose').addEventListener('click', e => {
+    e.stopPropagation();
+    archivePanel.classList.remove('open');
+  });
+
+  // 현재 재생 중인 글리치 오디오 (중복 방지)
+  let currentGlitchAudio = null;
+
+  function renderArchive() {
+    if (archiveCut.length === 0) {
+      archiveList.innerHTML = `<div class="archive-empty">아직 정리된 곡이 없어요</div>`;
+      return;
+    }
+    archiveList.innerHTML = '';
+    archiveCut.slice().reverse().forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'archive-row';
+
+      // 재생 상태 표시
+      row.innerHTML = `
+        <div class="archive-tag" style="font-size:18px;">✂️</div>
+        <div class="archive-info" style="flex:1;">
+          <div class="archive-name">${item.name}</div>
+          <div class="archive-sub">의식적으로 정리된 · ${item.time}</div>
+        </div>
+        <div class="archive-play-btn" style="
+          font-size:11px; color:#1db954; font-weight:600;
+          padding:4px 10px; border:1px solid #1db954;
+          border-radius:12px; flex-shrink:0;
+          font-family:-apple-system,sans-serif;
+          cursor:pointer;
+        ">▶ 글리치</div>
+      `;
+
+      // 클릭 → 글리치 재생
+      row.querySelector('.archive-play-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        // 이전 재생 중지
+        if (currentGlitchAudio) {
+          currentGlitchAudio.pause();
+          currentGlitchAudio.src = '';
+          currentGlitchAudio = null;
+        }
+        playGlitchAudio(item.plIdx, item.originalIdx);
+      });
+
+      archiveList.appendChild(row);
+    });
+  }
+
+  // ══════════════════════════════
+  // 손톱 파편 효과
+  // ══════════════════════════════
+  function explodeNailPieces() {
+    const cx = window.innerWidth * 0.25;
+    const cy = window.innerHeight * 0.5;
+    for (let i = 0; i < 24; i++) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      const w = 60 + Math.random() * 80;
+      svg.setAttribute('width', w); svg.setAttribute('height', w * 0.5); svg.setAttribute('viewBox', '0 0 60 30');
+      svg.style.cssText = `position:fixed; pointer-events:none; z-index:1000; left:${cx}px; top:${cy}px; opacity:1;`;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', 'M 2 28 Q 30 2 58 28 Q 30 20 2 28 Z');
+      const colors = ['#f0e8d8', '#e8dcc8', '#ddd0bc', '#f5efe2', '#ece0cc'];
+      path.setAttribute('fill', colors[Math.floor(Math.random() * colors.length)]);
+      svg.appendChild(path); document.body.appendChild(svg);
+      const initRot = Math.random() * 360;
+      svg.style.transform = `rotate(${initRot}deg)`;
+      const angle = (i / 24) * 360 + Math.random() * 25;
+      const dist  = 300 + Math.random() * 700;
+      const tx = Math.cos(angle * Math.PI / 180) * dist;
+      const ty = Math.sin(angle * Math.PI / 180) * dist;
+      const rot = initRot + Math.random() * 540 - 270;
+      const dur = 0.5 + Math.random() * 0.5;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        svg.style.transition = `transform ${dur}s cubic-bezier(0.15,0,0.85,1), opacity ${dur * 0.6}s ease ${dur * 0.4}s`;
+        svg.style.transform  = `translate(${tx}px,${ty}px) rotate(${rot}deg)`;
+        svg.style.opacity    = '0';
+      }));
+      setTimeout(() => svg.remove(), 1400);
+    }
+  }
+
+  // ══════════════════════════════
+  // 손 화면
+  // ══════════════════════════════
+  const handScreen = document.getElementById('handScreen');
+  const HAND_NATURAL_W = 5376;
+  const HAND_NATURAL_H = 3584;
+
+  const nailPositions = {
+    'nail-pinky':  { x: 0.438, y: 0.390 },
+    'nail-ring':   { x: 0.487, y: 0.330 },
+    'nail-middle': { x: 0.535, y: 0.305 },
+    'nail-index':  { x: 0.582, y: 0.320 },
+    'nail-thumb':  { x: 0.632, y: 0.445 },
+  };
+
+  function positionNailZones() {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const imgRatio = HAND_NATURAL_W / HAND_NATURAL_H;
+    const screenRatio = vw / vh;
+    let rw, rh, ox, oy;
+    if (screenRatio > imgRatio) {
+      rh = vh; rw = vh * imgRatio; ox = (vw - rw) / 2; oy = 0;
+    } else {
+      rw = vw; rh = vw / imgRatio; ox = 0; oy = (vh - rh) / 2;
+    }
+    Object.entries(nailPositions).forEach(([id, pos]) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.left = (ox + pos.x * rw) + 'px';
+      el.style.top  = (oy + pos.y * rh) + 'px';
+    });
+  }
+
+  window.addEventListener('resize', positionNailZones);
+
+  // ══════════════════════════════
+  // 줌인
+  // ══════════════════════════════
+  const zoomOverlay = document.getElementById('zoomOverlay');
+  const zoomCanvas  = document.getElementById('zoomCanvas');
+  const zoomCtx     = zoomCanvas.getContext('2d');
+  const handImgEl   = new Image();
+  handImgEl.src = 'hand.png';
+
+  document.querySelectorAll('.nail-zone').forEach(zone => {
+    zone.addEventListener('click', () => {
+      const playlistIndex = parseInt(zone.dataset.playlist);
+      const pos = nailPositions[zone.id];
+      startZoomIn(pos.x, pos.y, playlistIndex);
+    });
+  });
+
+  function getHandRenderRect() {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const imgRatio = HAND_NATURAL_W / HAND_NATURAL_H;
+    const screenRatio = vw / vh;
+    let rw, rh, ox, oy;
+    if (screenRatio > imgRatio) { rh = vh; rw = vh * imgRatio; ox = (vw - rw) / 2; oy = 0; }
+    else { rw = vw; rh = vw / imgRatio; ox = 0; oy = (vh - rh) / 2; }
+    return { rw, rh, ox, oy };
+  }
+
+  function startZoomIn(originX, originY, playlistIndex) {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    zoomCanvas.width = vw; zoomCanvas.height = vh;
+    const { rw, rh, ox, oy } = getHandRenderRect();
+    const cx = ox + originX * rw;
+    const cy = oy + originY * rh;
+    zoomOverlay.style.opacity = '0';
+    zoomOverlay.classList.add('active');
+    zoomOverlay.style.display = 'block';
+    const startTime = performance.now();
+    const duration = 650, maxScale = 12;
+    function drawFrame(now) {
+      const t = Math.min((now - startTime) / duration, 1);
+      const ease = t * t * t;
+      const scale = 1 + (maxScale - 1) * ease;
+      zoomCtx.clearRect(0, 0, vw, vh);
+      zoomCtx.save();
+      zoomCtx.translate(cx, cy); zoomCtx.scale(scale, scale); zoomCtx.translate(-cx, -cy);
+      zoomCtx.fillStyle = '#fff';
+      zoomCtx.fillRect(-cx / scale, -cy / scale, vw / scale + cx / scale * 2, vh / scale + cy / scale * 2);
+      if (handImgEl.complete) zoomCtx.drawImage(handImgEl, ox, oy, rw, rh);
+      zoomCtx.restore();
+      zoomOverlay.style.opacity = Math.min(t * 3, 1).toString();
+      if (t < 1) {
+        requestAnimationFrame(drawFrame);
+      } else {
+        // 플레이리스트 전환 — 항상 빈 상태(step 0)로 시작
+        currentPlaylist = playlists[playlistIndex];
+        allTracks = [];
+        ipodActiveIdx = 0;
+        ipodAddCounts = {};
+        playlistSteps[playlistIndex] = 0;  // 진입할 때 항상 0으로 리셋
+        applyStep(0);
+        handScreen.classList.remove('visible');
+        app.classList.add('visible');
+        zoomOverlay.style.transition = 'opacity 0.3s ease';
+        zoomOverlay.style.opacity = '0';
+        setTimeout(() => { zoomOverlay.classList.remove('active'); zoomOverlay.style.display = 'none'; zoomOverlay.style.transition = ''; }, 350);
+      }
+    }
+    requestAnimationFrame(drawFrame);
+  }
+
+  // ══════════════════════════════
+  // 패널 드래그
+  // ══════════════════════════════
+  const panelLeft  = document.getElementById('panel-left');
+  const panelRight = document.getElementById('panel-right');
+  let leftPct = 50, dragStartX = null, dragStartPct = null, dragging = false;
+
+  function setPanels(pct, animated) {
+    pct = Math.max(0, Math.min(100, pct));
+    const tr = animated ? 'width 0.4s cubic-bezier(0.77,0,0.175,1)' : 'none';
+    panelLeft.style.transition = tr; panelRight.style.transition = tr;
+    panelLeft.style.width = pct + '%'; panelRight.style.width = (100 - pct) + '%';
+    leftPct = pct;
+    if (pct === 0) { archivePanel.style.left = '0'; archivePanel.style.width = '100%'; }
+    else { archivePanel.style.left = '0'; archivePanel.style.width = '50%'; }
+  }
+
+  function dragStart(clientX) { dragStartX = clientX; dragStartPct = leftPct; dragging = true; }
+  function dragMove(clientX)  { if (!dragging) return; setPanels(dragStartPct + (clientX - dragStartX) / window.innerWidth * 100, false); }
+  function dragEnd()          { if (!dragging) return; dragging = false; if (leftPct < 25) setPanels(0, true); else if (leftPct < 75) setPanels(50, true); else setPanels(100, true); }
+
+  // ══════════════════════════════
+  // 슬라이더
+  // ══════════════════════════════
+  const sliderTrack = document.getElementById('sliderTrack');
+  let draggingSlider = false;
+  sliderThumb.addEventListener('mousedown', e => { draggingSlider = true; e.stopPropagation(); });
+  document.addEventListener('mousemove', e => {
+    if (draggingSlider) { const r = sliderTrack.getBoundingClientRect(); applyStep(Math.round(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * 9) + 1); }
+    else if (dragging)  { dragMove(e.clientX); }
+  });
+  document.addEventListener('mouseup', () => { if (draggingSlider) draggingSlider = false; else dragEnd(); });
+  panelLeft.addEventListener('mousedown',  e => { if (!draggingSlider) dragStart(e.clientX); });
+  panelRight.addEventListener('mousedown', e => {
+    // 휠 클릭이 아닐 때만 드래그
+    if (!e.target.closest('.ipod-wheel')) dragStart(e.clientX);
+  });
+  panelLeft.addEventListener('touchstart',  e => dragStart(e.touches[0].clientX), { passive: true });
+  panelRight.addEventListener('touchstart', e => { if (!e.target.closest('.ipod-wheel')) dragStart(e.touches[0].clientX); }, { passive: true });
+  document.addEventListener('touchmove',    e => dragMove(e.touches[0].clientX),  { passive: true });
+  document.addEventListener('touchend',     dragEnd);
+</script>
+</body>
+</html>
